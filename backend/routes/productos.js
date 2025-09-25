@@ -11,6 +11,7 @@ router.get("/", async (req, res) => {
         nombre,
         descripcion_breve,
         descripcion,
+        precio,
         CASE WHEN img IS NOT NULL THEN true ELSE false END as tiene_imagen
       FROM pizarras 
       ORDER BY nombre
@@ -91,6 +92,7 @@ router.get("/:nombre", async (req, res) => {
         nombre,
         descripcion_breve,
         descripcion,
+        precio,
         CASE WHEN img IS NOT NULL THEN true ELSE false END as tiene_imagen,
         CASE WHEN img IS NOT NULL THEN octet_length(img) ELSE 0 END as tamaño_imagen
       FROM pizarras 
@@ -128,6 +130,7 @@ router.get("/buscar/:termino", async (req, res) => {
         nombre,
         descripcion_breve,
         descripcion,
+        precio,
         CASE WHEN img IS NOT NULL THEN true ELSE false END as tiene_imagen
       FROM pizarras 
       WHERE 
@@ -163,7 +166,10 @@ router.get("/stats/resumen", async (req, res) => {
         COUNT(img) as con_imagen,
         COUNT(*) - COUNT(img) as sin_imagen,
         COALESCE(SUM(octet_length(img)), 0) as tamaño_total_imagenes,
-        COALESCE(AVG(octet_length(img)), 0) as tamaño_promedio_imagen
+        COALESCE(AVG(octet_length(img)), 0) as tamaño_promedio_imagen,
+        COALESCE(AVG(precio), 0) as precio_promedio,
+        MIN(precio) as precio_minimo,
+        MAX(precio) as precio_maximo
       FROM pizarras
     `;
     
@@ -176,7 +182,10 @@ router.get("/stats/resumen", async (req, res) => {
       con_imagen: parseInt(stats.con_imagen),
       sin_imagen: parseInt(stats.sin_imagen),
       tamaño_total_imagenes: parseInt(stats.tamaño_total_imagenes),
-      tamaño_promedio_imagen: Math.round(parseFloat(stats.tamaño_promedio_imagen))
+      tamaño_promedio_imagen: Math.round(parseFloat(stats.tamaño_promedio_imagen)),
+      precio_promedio: parseFloat(stats.precio_promedio),
+      precio_minimo: parseFloat(stats.precio_minimo),
+      precio_maximo: parseFloat(stats.precio_maximo)
     };
     
     res.json({
@@ -195,22 +204,22 @@ router.get("/stats/resumen", async (req, res) => {
 // Crear nueva pizarra (si necesitas esta funcionalidad desde el frontend)
 router.post("/", async (req, res) => {
   try {
-    const { nombre, descripcion_breve, descripcion } = req.body;
+    const { nombre, descripcion_breve, descripcion, precio } = req.body;
     
-    if (!nombre || !descripcion_breve) {
+    if (!nombre || !descripcion_breve || precio === undefined) {
       return res.status(400).json({
         success: false,
-        message: "Nombre y descripción breve son obligatorios"
+        message: "Nombre, descripción breve y precio son obligatorios"
       });
     }
     
     const query = `
-      INSERT INTO pizarras (nombre, descripcion_breve, descripcion)
-      VALUES ($1, $2, $3)
-      RETURNING nombre, descripcion_breve, descripcion
+      INSERT INTO pizarras (nombre, descripcion_breve, descripcion, precio)
+      VALUES ($1, $2, $3, $4)
+      RETURNING nombre, descripcion_breve, descripcion, precio
     `;
     
-    const result = await db.query(query, [nombre, descripcion_breve, descripcion]);
+    const result = await db.query(query, [nombre, descripcion_breve, descripcion, precio]);
     
     res.status(201).json({
       success: true,

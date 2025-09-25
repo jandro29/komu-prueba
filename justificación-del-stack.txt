@@ -1,0 +1,26 @@
+Front-end:
+
+## Beneficios que tiene Next.js:
+
+- Tiene una arquitectura modular y mantenible
+- SSR/SSG nativo para SEO
+- Optimizaciones automaticas
+- Middleware integrado
+
+Back-end:
+
+## Beneficios que tiene Node.js:
+
+- Ecosistema npm masivo
+- Deployment simple
+- Es mas libiano y ayuda cuando no se va a requerir mucha informacion
+
+
+Base de datos:
+
+## Beneficios que tiene Postgres:
+
+- Tipos de datos avanzados (JSON, arrays)
+- Escalabilidad vertical probada
+
+

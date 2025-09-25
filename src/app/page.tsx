@@ -8,6 +8,7 @@ interface PizarraDB {
   descripcion_breve: string;
   descripcion: string;
   tiene_imagen: boolean;
+  precio: Float32Array;
 }
 
 interface PizarraFrontend {
@@ -15,6 +16,7 @@ interface PizarraFrontend {
   nombre: string;
   descripcion_breve: string;
   descripcion: string;
+  precio: Float32Array;
   tiene_imagen: boolean;
   img_url: string | null;
 }
@@ -34,40 +36,26 @@ interface Stats {
   tamaño_promedio_imagen: number;
 }
 
-// Interfaz para items del carrito
-interface CartItem {
-  id: number;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-  imagen?: string;
-  descripcion_breve?: string;
-}
-
 export default function Home() {
-  // Estados con tipos específicos - manteniendo tu lógica original
+  // Estados con tipos específicos
   const [pizarras, setPizarras] = useState<PizarraFrontend[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  
-  // Estados para el carrito de compras
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
   // Estados para paginación
   const itemsPorPagina: number = 4;
   const [pagina, setPagina] = useState<number>(1);
 
-  // Estados para el popup de información
+  // Estados para el popup
   const [selectedPizarra, setSelectedPizarra] = useState<PizarraFrontend | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
 
-  // URL base de tu API - manteniendo tu configuración original
+  // URL base de API
   const API_BASE_URL: string = "http://localhost:4000/api/productos";
 
-  // Función para cargar pizarras con tipos - TU CÓDIGO ORIGINAL
+  // Cargar pizarras con tipos
   const cargarPizarras = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
@@ -93,6 +81,7 @@ export default function Home() {
           nombre: pizarra.nombre,
           descripcion_breve: pizarra.descripcion_breve,
           descripcion: pizarra.descripcion,
+          precio: pizarra.precio,
           tiene_imagen: pizarra.tiene_imagen,
           img_url: pizarra.tiene_imagen 
             ? `${API_BASE_URL}/imagen/${encodeURIComponent(pizarra.nombre)}?t=${Date.now()}`
@@ -102,7 +91,7 @@ export default function Home() {
         setPizarras(pizarrasFormateadas);
         setLastUpdate(new Date());
         
-        // Resetear página si es necesario
+        // Resetear página
         const totalPaginas = Math.ceil(pizarrasFormateadas.length / itemsPorPagina);
         if (pagina > totalPaginas && totalPaginas > 0) {
           setPagina(1);
@@ -122,7 +111,7 @@ export default function Home() {
     }
   }, [API_BASE_URL, pagina, itemsPorPagina]);
 
-  // Función para cargar estadísticas con tipos - TU CÓDIGO ORIGINAL
+  // Función para cargar estadísticas
   const cargarEstadisticas = useCallback(async (): Promise<void> => {
     try {
       const response = await fetch(`${API_BASE_URL}/stats/resumen`, {
@@ -143,13 +132,13 @@ export default function Home() {
     }
   }, [API_BASE_URL]);
 
-  // Cargar datos al montar el componente - TU LÓGICA ORIGINAL
+  // Cargar datos al montar el componente
   useEffect(() => {
     cargarPizarras();
     cargarEstadisticas();
   }, [cargarPizarras, cargarEstadisticas]);
 
-  // Auto-actualización cada 30 segundos - TU LÓGICA ORIGINAL
+  // Auto-actualización cada 30 segundos
   useEffect(() => {
     const interval = setInterval(() => {
       cargarPizarras();
@@ -159,50 +148,7 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [cargarPizarras, cargarEstadisticas]);
 
-  // Funciones del carrito - MANTENIENDO TU CÓDIGO
-  const agregarAlCarrito = (pizarra: PizarraFrontend) => {
-    const existingItem = cartItems.find(item => item.id === pizarra.id);
-    
-    const precioEstimado = 15;
-    
-    if (existingItem) {
-      setCartItems(cartItems.map(item =>
-        item.id === pizarra.id
-          ? { ...item, cantidad: item.cantidad + 1 }
-          : item
-      ));
-    } else {
-      const newItem: CartItem = {
-        id: pizarra.id,
-        nombre: pizarra.nombre,
-        precio: precioEstimado,
-        cantidad: 1,
-        imagen: pizarra.img_url || undefined,
-        descripcion_breve: pizarra.descripcion_breve
-      };
-      setCartItems([...cartItems, newItem]);
-    }
-    
-    setIsCartOpen(true);
-    setTimeout(() => setIsCartOpen(false), 2000);
-  };
-
-  const eliminarDelCarrito = (id: number) => {
-    setCartItems(cartItems.filter(item => item.id !== id));
-  };
-
-  const actualizarCantidad = (id: number, cantidad: number) => {
-    if (cantidad <= 0) {
-      eliminarDelCarrito(id);
-      return;
-    }
-    
-    setCartItems(cartItems.map(item =>
-      item.id === id ? { ...item, cantidad } : item
-    ));
-  };
-
-  // Funciones para el popup NUEVAS
+  // Funciones para el popup
   const abrirPopup = (pizarra: PizarraFrontend) => {
     setSelectedPizarra(pizarra);
     setIsPopupOpen(true);
@@ -213,17 +159,13 @@ export default function Home() {
     setTimeout(() => setSelectedPizarra(null), 300);
   };
 
-  // Calcular total del carrito
-  const totalCarrito = cartItems.reduce((total, item) => total + (item.precio * item.cantidad), 0);
-  const cantidadItems = cartItems.reduce((total, item) => total + item.cantidad, 0);
-
-  // Función para refrescar manualmente - TU CÓDIGO ORIGINAL
+  // Función para refrescar manualmente
   const refrescarDatos = async (): Promise<void> => {
     await cargarPizarras();
     await cargarEstadisticas();
   };
 
-  // Cálculos de paginación - TU CÓDIGO ORIGINAL
+  // Cálculos de paginación
   const inicio: number = (pagina - 1) * itemsPorPagina;
   const fin: number = inicio + itemsPorPagina;
   const pizarrasPagina: PizarraFrontend[] = pizarras.slice(inicio, fin);
@@ -237,14 +179,14 @@ export default function Home() {
     if (pagina > 1) setPagina(pagina - 1);
   };
 
-  // Componente de loading - TU CÓDIGO ORIGINAL
+  // Componente de loading
   if (loading && pizarras.length === 0) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-xl font-semibold text-gray-600 dark:text-gray-300">
-            Cargando pizarras desde PostgreSQL...
+            Cargando pizarras...
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             Base de datos: catalogo_komu
@@ -254,7 +196,7 @@ export default function Home() {
     );
   }
 
-  // Componente de error - TU CÓDIGO ORIGINAL
+  // Componente de error
   if (error && pizarras.length === 0) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
@@ -347,7 +289,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Grid de pizarras - CON BOTÓN AGREGADO */}
+          {/* Grid de pizarras */}
           <AnimatePresence mode="wait">
             <motion.div
               key={`${pagina}-${pizarras.length}`}
@@ -383,7 +325,7 @@ export default function Home() {
                       )}
                     </div>
 
-                    {/* Lado derecho - Información */}
+                    {/* Lado derecho */}
                     <div className="flex-1 p-6 flex flex-col justify-between">
                       <div>
                         <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2 line-clamp-2">
@@ -397,10 +339,10 @@ export default function Home() {
                         </p>
                       </div>
 
-                      {/* Parte inferior - Precio y botones */}
+                      {/* Parte inferior */}
                       <div className="flex items-center justify-between">
                         <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                          $17
+                          S/{pizarra.precio}
                         </span>
                         <button
                           onClick={() => abrirPopup(pizarra)}
@@ -430,7 +372,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* Paginación mejorada */}
+          {/* Paginación */}
           {totalPaginas > 1 && (
             <>
               <div className="flex justify-center items-center gap-2 mt-8">
@@ -583,7 +525,7 @@ export default function Home() {
                     {/* Precio y cerrar popup */}
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                       <span className="text-3xl font-bold text-green-600 dark:text-green-400">
-                        $17
+                        S/{selectedPizarra.precio}
                       </span>
                       <div className="flex gap-3">
                         <button
